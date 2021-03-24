@@ -40,17 +40,16 @@ class Player:
     def hit(self, deck):
         card = deck.draw()
         print('Card {}: {} of {}'.format(range(int(self.hand)),card.get_value(), card.get_suit()))
-        self.hand.append()
-        #                                     ^ this needs to be changed
-        for i in self.hand.value():
-            if (card.get_value() == 'J') or (card.get_value() == 'Q') or (card.get_value() == 'K'):
-                self.total += 10
-            elif (card.get_value() == 'A') and self.total >= 10:
-                self.total += 11
-            elif (card.get_value() == 'A') and self.total < 10:
-                self.total += 1
-            else:
-                self.total += int(card.get_value())
+        print('Card {}: {} of {}'.format(int(len(self.hand) + 1),card.get_value(), card.get_suit()))
+        self.hand.append(card)
+        if (card.get_value() == 'J') or (card.get_value() == 'Q') or (card.get_value() == 'K'):
+            self.total += 10
+        elif (card.get_value() == 'A') and self.total >= 10:
+            self.total += 11
+        elif (card.get_value() == 'A') and self.total < 10:
+            self.total += 1
+        else:
+            self.total += int(card.get_value())
         return self.total
 
     def stand(self):
