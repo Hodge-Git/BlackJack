@@ -29,7 +29,7 @@ class Player:
         for i in self.hand:
             if (card.get_value() == 'J') or (card.get_value() == 'Q') or (card.get_value() == 'K'):
                 self.total += 10
-            elif (card.get_value() == 'A') and self.total >= 10:
+            elif (card.get_value() == 'A') and self.total <= 10:
                 self.total += 11
             elif (card.get_value() == 'A') and self.total < 10:
                 self.total += 1
@@ -39,7 +39,6 @@ class Player:
 
     def hit(self, deck):
         card = deck.draw()
-        print('Card {}: {} of {}'.format(range(int(self.hand)),card.get_value(), card.get_suit()))
         print('Card {}: {} of {}'.format(int(len(self.hand) + 1),card.get_value(), card.get_suit()))
         self.hand.append(card)
         if (card.get_value() == 'J') or (card.get_value() == 'Q') or (card.get_value() == 'K'):
@@ -153,16 +152,14 @@ while (play == True) or (player.get_money > 0):
                 print('BlackJack!')
                 deck.recall(player.hand,dealer.hand)
                 player.take_pot(pot * 1.5)
-                pot == 0
-
+                pot = 0
             else:
                 while player.stand == False:
                     hit = input('do you want to hit? ')
                     if hit == 'Y':
                         player.hit(deck)
                         if player.get_total() > 21:
-                            print('Bust')
-                            
+                            print('Bust')    
                     else:
                         player.stand()
                         print('You stay, Dealers turn.')
