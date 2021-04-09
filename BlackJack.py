@@ -27,14 +27,14 @@ class Player:
             self.hand.append(card)
             
         for i in self.hand:
-            if (card.get_value() == 'J') or (card.get_value() == 'Q') or (card.get_value() == 'K'):
+            if (i.get_value() == 'J') or (i.get_value() == 'Q') or (i.get_value() == 'K'):
                 self.total += 10
-            elif (card.get_value() == 'A') and self.total <= 10:
+            elif (i.get_value() == 'A') and self.total <= 10:
                 self.total += 11
-            elif (card.get_value() == 'A') and self.total < 10:
+            elif (i.get_value() == 'A') and self.total < 10:
                 self.total += 1
             else:
-                self.total += int(card.get_value())
+                self.total += int(i.get_value())
         return self.total
 
     def hit(self, deck):
