@@ -20,7 +20,7 @@ class Player:
         self.money += pot
         print('You now have ${}'.format(self.money))
 
-    def start_hand(self, deck):  #Starts the hand by drawing 2 cards, but it only draws last card created from for loop and copies it
+    def start_hand(self, deck):
         for i in range(2):
             card = deck.draw()
             print('Card {}: {} of {}'.format(i+1, card.get_value(), card.get_suit()))
@@ -49,6 +49,10 @@ class Player:
             self.total += 1
         else:
             self.total += int(card.get_value())
+        
+        for x in self.hand(): #changes Ace value in hand if over 21
+            if x.get_value() == "A" and self.total > 21:
+                self.total -= 10
         return self.total
 
     def stand(self):
@@ -159,7 +163,9 @@ while (play == True) or (player.get_money > 0):
                     if hit == 'Y':
                         player.hit(deck)
                         if player.get_total() > 21:
-                            print('Bust')    
+                            print('Bust')
+                            deck.recall(player.hand,dealer.hand)
+                            pot = 0    
                     else:
                         player.stand()
                         print('You stay, Dealers turn.')
