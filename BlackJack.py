@@ -20,6 +20,10 @@ class Player:
         self.money += pot
         print('You now have ${}'.format(self.money))
 
+    def lose(self, pot):
+        self.money -= pot
+        print('You now have ${}'.format(self.money))
+
     def resetTotal(self):
         self.total = 0
 
@@ -142,6 +146,7 @@ money = int(input('How much money will you be playing with? Default $100. '))
 player = Player(name, money)
 dealer = Player('Dealer', 0, True)
 
+
 '''
 deck.shuffle()
 for _ in range(5):
@@ -149,7 +154,7 @@ for _ in range(5):
     print('{} of {}'.format(card.get_value(), card.get_suit()))
 '''
 
-while (play == True) or (player.get_money > 0):
+while (play == True) or (player.get_money() >= 0):
     deck.shuffle()
     Bust = False
     try:
@@ -166,6 +171,9 @@ while (play == True) or (player.get_money > 0):
                 deck.recall(player.hand,dealer.hand)
                 player.take_pot(pot * 1.5)
                 pot = 0
+                playCheck = input('Do you want to play again? ')
+                if playCheck == "N":
+                    play = False
             else:
                 while player.stand == False or Bust == False:
                     hit = input('do you want to hit? ')
@@ -176,7 +184,11 @@ while (play == True) or (player.get_money > 0):
                             Bust = True
                             Deck.recall(player.hand,dealer.hand)
                             pot = 0
+                            player.lose(pot)
                             player.resetTotal()
+                            playCheck = input('Do you want to play again? ')
+                            if playCheck == "N":
+                                play = False
                             break
                     else:
                         player.Stand()
