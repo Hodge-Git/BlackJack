@@ -20,6 +20,9 @@ class Player:
         self.money += pot
         print('You now have ${}'.format(self.money))
 
+    def resetTotal(self):
+        self.total = 0
+
     def start_hand(self, deck):
         for i in range(2):
             card = deck.draw()
@@ -50,12 +53,13 @@ class Player:
         else:
             self.total += int(card.get_value())
         
-        for x in self.hand(): #changes Ace value in hand if over 21
-            if x.get_value() == "A" and self.total > 21:
+        for x in self.hand: #changes Ace value in hand if over 21
+            if x.get_value() == "A" and self.total > 21 and x.usedAce == False:
                 self.total -= 10
+                x.use_ace()
         return self.total
 
-    def stand(self):
+    def Stand(self):
         self.stand = True
 
     def bet(self, bet):
@@ -77,9 +81,13 @@ class Player:
             self.money -= bet * 2
 
 class Card:
-    def __init__(self, suit, value):
+    def __init__(self, suit, value, usedAce):
         self.suit = suit
         self.value = value
+        self.usedAce = usedAce
+
+    def use_ace(self):
+        self.usedAce = True
 
     def get_value(self):
         return self.value
@@ -106,7 +114,7 @@ class Deck:
     def draw(self):
         return self.deck.pop()
 
-    def recall(self, player_hand, dealer_hand):
+    def recall(self, player_hand, dealer_hand = ()):
         for i in player_hand:
             self.deck.append(player_hand.pop())
 
@@ -123,7 +131,7 @@ values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
 deck = Deck()
 for s in suits:  #creates the cards for the deck
     for v in values:
-        card = Card(s,v)
+        card = Card(s,v,False)
         #print(card)
         deck.add_card(card)
 pot = 0
@@ -143,6 +151,7 @@ for _ in range(5):
 
 while (play == True) or (player.get_money > 0):
     deck.shuffle()
+    Bust = False
     try:
         bet = int(input('how much will you bet? '))
         player.bet(bet)
@@ -158,17 +167,21 @@ while (play == True) or (player.get_money > 0):
                 player.take_pot(pot * 1.5)
                 pot = 0
             else:
-                while player.stand == False:
+                while player.stand == False or Bust == False:
                     hit = input('do you want to hit? ')
                     if hit == 'Y':
                         player.hit(deck)
                         if player.get_total() > 21:
                             print('Bust')
-                            deck.recall(player.hand,dealer.hand)
-                            pot = 0    
+                            Bust = True
+                            Deck.recall(player.hand,dealer.hand)
+                            pot = 0
+                            player.resetTotal()
+                            break
                     else:
-                        player.stand()
+                        player.Stand()
                         print('You stay, Dealers turn.')
+                        break
                         
     except ValueError:
         print('Please use a number.')
