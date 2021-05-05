@@ -154,7 +154,7 @@ for _ in range(5):
     print('{} of {}'.format(card.get_value(), card.get_suit()))
 '''
 
-while (play == True) or (player.get_money() >= 0):
+while play != False or player.get_money() >= 0:
     deck.shuffle()
     Bust = False
     try:
