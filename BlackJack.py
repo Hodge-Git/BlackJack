@@ -36,9 +36,9 @@ class Player:
         for i in self.hand:
             if (i.get_value() == 'J') or (i.get_value() == 'Q') or (i.get_value() == 'K'):
                 self.total += 10
-            elif (i.get_value() == 'A') and self.total <= 10:
+            elif (i.get_value() == 'A') and self.total >= 10:
                 self.total += 11
-            elif (i.get_value() == 'A') and self.total < 10:
+            elif (i.get_value() == 'A'):
                 self.total += 1
             else:
                 self.total += int(i.get_value())
@@ -52,7 +52,7 @@ class Player:
             self.total += 10
         elif (card.get_value() == 'A') and self.total >= 10:
             self.total += 11
-        elif (card.get_value() == 'A') and self.total < 10:
+        elif (card.get_value() == 'A'):
             self.total += 1
         else:
             self.total += int(card.get_value())
@@ -85,7 +85,7 @@ class Player:
             self.money -= bet * 2
 
 class Card:
-    def __init__(self, suit, value, usedAce):
+    def __init__(self, suit, value, usedAce = False):
         self.suit = suit
         self.value = value
         self.usedAce = usedAce
@@ -124,6 +124,7 @@ class Deck:
 
         for i in dealer_hand:
             self.deck.append(dealer_hand.pop())
+
     def get_card(self, suit, value):
         for c in self.deck:
             if (c.get_suit == suit) and (c.get_value == value):
@@ -154,7 +155,7 @@ for _ in range(5):
     print('{} of {}'.format(card.get_value(), card.get_suit()))
 '''
 
-while play != False or player.get_money() >= 0:
+while play == True and player.get_money() >= 0: #rewrite this code into two different functions
     deck.shuffle()
     Bust = False
     try:
@@ -174,6 +175,8 @@ while play != False or player.get_money() >= 0:
                 playCheck = input('Do you want to play again? ')
                 if playCheck == "N":
                     play = False
+                    break
+
             else:
                 while player.stand == False or Bust == False:
                     hit = input('do you want to hit? ')
