@@ -112,7 +112,6 @@ class Deck:
 
     def shuffle(self):
         random.shuffle(self.deck)
-        #print('Deck:', [str(c) for c in self.deck])
         return self.deck
 
     def draw(self):
@@ -137,71 +136,86 @@ deck = Deck()
 for s in suits:  #creates the cards for the deck
     for v in values:
         card = Card(s,v,False)
-        #print(card)
         deck.add_card(card)
-pot = 0
-play = True #is the check variable for ending the game
 
 name = input('What is your name? ')
 money = int(input('How much money will you be playing with? Default $100. '))
 player = Player(name, money)
 dealer = Player('Dealer', 0, True)
 
-
-'''
-deck.shuffle()
-for _ in range(5):
-    card = deck.draw()
-    print('{} of {}'.format(card.get_value(), card.get_suit()))
-'''
-
-while play == True and player.get_money() >= 0: #rewrite this code into two different functions
-    deck.shuffle()
-    Bust = False
-    try:
-        bet = int(input('how much will you bet? '))
-        player.bet(bet)
-        if player.overBet == True:
-            continue
+def Game():
+    turn = 0
+    pot = 0
+    play = True #is the check variable for ending the game
+    while play == True and player.get_money() >= 0:
+        turn += 1
+        deck.shuffle()
+        BlackJack = False
+        Bust = False
+        Betting(pot)
+        player.start_hand(deck)
+        
+        if player.get_total() == 21: #this is for a BlackJack
+            print('BlackJack!')
+            BlackJack = True
+            potManage(pot, Bust, BlackJack)
+            deck.recall(player.hand,dealer.hand)
         else:
-            pot += bet
-            print('{} is the pot'.format(pot))
-            player.start_hand(deck)
-            if player.get_total() == 21:
-                print('BlackJack!')
-                deck.recall(player.hand,dealer.hand)
-                player.take_pot(pot * 1.5)
-                pot = 0
-                playCheck = input('Do you want to play again? ')
-                if playCheck == "N":
-                    play = False
-                    break
-
-            else:
-                while player.stand == False or Bust == False:
+            while player.stand == False or Bust == False:
                     hit = input('do you want to hit? ')
                     if hit == 'Y':
                         player.hit(deck)
-                        if player.get_total() > 21:
+                        if player.get_total() > 21: #This is for busting
                             print('Bust')
                             Bust = True
                             Deck.recall(player.hand,dealer.hand)
-                            pot = 0
-                            player.lose(pot)
+                            potManage(pot, Bust, BlackJack)
                             player.resetTotal()
+                            turn = 0
                             playCheck = input('Do you want to play again? ')
                             if playCheck == "N":
                                 play = False
-                            break
+                                break
                     else:
                         player.Stand()
-                        print('You stay, Dealers turn.')
-                        break
-                        
-    except ValueError:
-        print('Please use a number.')
-        continue
+                        print('You stay it\'s the dealers turn')
+                        Dealer()
     
+    print('Thank you for playing!')
+
+            
+
+
+
+def Betting(pot):
+    try:
+        bet = int(input('How much will you bet? '))
+        player.bet(bet)
+        if player.overBet == True:
+            Betting()
+        else:
+            pot += bet
+            print('{} is the pot'.format(pot))
+            return pot        
+    except ValueError:
+        print('Please use a number')
+        Betting()
+
+def potManage(pot, Bust, BlackJack):
+    if BlackJack == True:
+        pot *= 1.5
+        player.take_pot(pot)
+        pot = 0
+    elif Bust == True:
+        player.lose(pot)
+        pot = 0
+    else:
+        player.take_pot(pot)
+        pot = 0
+
+
+Game()
+
     
         
             
