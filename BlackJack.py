@@ -192,14 +192,14 @@ def Betting(pot):
         bet = int(input('How much will you bet? '))
         player.bet(bet)
         if player.overBet == True:
-            Betting()
+            Betting(pot)
         else:
             pot += bet
             print('{} is the pot'.format(pot))
             return pot        
     except ValueError:
         print('Please use a number')
-        Betting()
+        Betting(pot)
 
 def potManage(pot, Bust, BlackJack):
     if BlackJack == True:
