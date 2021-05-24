@@ -1,4 +1,6 @@
+from itertools import product
 import random
+from typing import ForwardRef
 
 class Player:
     def __init__(self, name, money = 100, dealer = False):
@@ -93,8 +95,13 @@ class Card:
     def use_ace(self):
         self.usedAce = True
 
-    def get_value(self):
-        return self.value
+    def get_values(self):
+        if self.value in ['J','K','Q']:
+            return [10]
+        if self.value == 'A':
+            return [1,11]
+        return [int(self.value)]
+
 
     def get_suit(self):
         return self.suit
@@ -106,6 +113,11 @@ class Card:
 class Deck:
     def __init__(self):
         self.deck = []
+        for s in SUITS:  #creates the cards for the deck
+            for v in VALUES:
+                card = Card(s,v,False)
+                self.add_card(card)
+        self.shuffle()
 
     def add_card(self, card):
         self.deck.append(card)
@@ -117,7 +129,7 @@ class Deck:
     def draw(self):
         return self.deck.pop()
 
-    def recall(self, player_hand, dealer_hand = ()):
+    def recall(self, player_hand, dealer_hand = ()): #possibly get rid of
         for i in player_hand:
             self.deck.append(player_hand.pop())
 
@@ -129,14 +141,17 @@ class Deck:
             if (c.get_suit == suit) and (c.get_value == value):
                 return c
 
-suits = ['D','C','S','H']
-values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
+SUITS = ['D','C','S','H']
+VALUES = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
 
 deck = Deck()
 for s in suits:  #creates the cards for the deck
     for v in values:
         card = Card(s,v,False)
         deck.add_card(card)
+
+for s,v in product(SUITS,VALUES):
+    ...
 
 name = input('What is your name? ')
 money = int(input('How much money will you be playing with? Default $100. '))
@@ -150,19 +165,19 @@ class Game:
 
     def play(self):
         player.start_hand
-        if self.has_blackjack() == True:
+        if self.has_blackjack():
             print("BlackJack!")
             Money.blackjack()
             return
 
-        while player.get_hand_value() <= 21 and player.prompt_hit() == True:
+        while player.get_hand_value() <= 21 and player.prompt_hit():
             player.hit
             
         if player.get_hand_value() > 21:
             self.has_busted()
             return
 
-        if player.prompt_hit() == False:
+        if not player.prompt_hit():
             player.stand()
             print('You stay it\'s the dealers turn')
             Dealer()
@@ -170,8 +185,7 @@ class Game:
         self.compare()
 
     def has_blackjack(self):
-        if player.get_hand_value() == 21:
-            return True    
+        return player.get_hand_value() == 21
 
     def has_busted(self):
         print('Bust')
@@ -234,14 +248,32 @@ class Game:
     print('Thank you for playing!')
 
             
+class Hand:
+    def __init__(self):
+        self.cards = []
+        
 
+    def addCard(self, card):
+        self.cards.append(card)
+    
+    def score(self): #Calculates largest evaluation of the hand that is less than 21
+        
+        cardsValues = [card.get_values() for card in self.cards]
+        possibilities = product(*cardsValues)
+        handValues = []
+        for possibility in possibilities:
+            handScore = sum(possibility)
+            if handScore <= 21:
+                handValues.append(handScore)
+        return max(handValues)
+    
 
 
 def Betting(pot):
     try:
         bet = int(input('How much will you bet? '))
         player.bet(bet)
-        if player.overBet == True:
+        if player.overBet():
             Betting(pot)
         else:
             pot += bet
@@ -265,6 +297,10 @@ def potManage(pot, Bust, BlackJack):
     return pot
 
 def Main():
+    ...
+    Money()
+    while player.prompt() and money > 0:
+        ...
 
 Main()
 
