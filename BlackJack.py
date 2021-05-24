@@ -143,25 +143,75 @@ money = int(input('How much money will you be playing with? Default $100. '))
 player = Player(name, money)
 dealer = Player('Dealer', 0, True)
 
-def Game():
-    turn = 0
-    pot = 0
-    play = True #is the check variable for ending the game
-    while play == True and player.get_money() >= 0:
-        turn += 1
-        deck.shuffle()
-        BlackJack = False
-        Bust = False
-        Betting(pot)
-        player.start_hand(deck)
-        
-        if player.get_total() == 21: #this is for a BlackJack
-            print('BlackJack!')
-            BlackJack = True
-            potManage(pot, Bust, BlackJack)
-            deck.recall(player.hand,dealer.hand)
+class Game:
+    def __init__(self,player):
+        self.player = player
+        self.deck = Deck()
+
+    def play(self):
+        player.start_hand
+        if self.has_blackjack() == True:
+            print("BlackJack!")
+            Money.blackjack()
+            return
+
+        while player.get_hand_value() <= 21 and player.prompt_hit() == True:
+            player.hit
+            
+        if player.get_hand_value() > 21:
+            self.has_busted()
+            return
+
+        if player.prompt_hit() == False:
+            player.stand()
+            print('You stay it\'s the dealers turn')
+            Dealer()
+
+        self.compare()
+
+    def has_blackjack(self):
+        if player.get_hand_value() == 21:
+            return True    
+
+    def has_busted(self):
+        print('Bust')
+        Money.bust()
+
+    def compare(self):
+        if player.get_hand_value() > dealer.get_hand_value():
+            print('You Win!')
+            Money.win()
+        elif player.get_hand_value() == dealer.get_hand_value():
+            print('Tie game')
+            Money.tie()
         else:
-            while player.stand == False or Bust == False:
+            print('You Lose.')
+            Money.lost
+        
+        
+        
+        
+        
+        
+        
+        
+        turn = 0
+        pot = 0
+        play = True #is the check variable for ending the game
+        while play == True and player.get_money() >= 0:
+            turn += 1
+            deck.shuffle()
+            BlackJack = False
+            Bust = False
+            Betting(pot)
+            player.start_hand(deck)
+            if player.get_total() == 21: #this is for a BlackJack
+                print('BlackJack!')
+                BlackJack = True
+                potManage(pot, Bust, BlackJack)
+                deck.recall(player.hand,dealer.hand)
+            else:
+                while player.stand == False or Bust == False:
                     hit = input('do you want to hit? ')
                     if hit == 'Y':
                         player.hit(deck)
@@ -176,10 +226,10 @@ def Game():
                             if playCheck == "N":
                                 play = False
                                 break
-                    else:
-                        player.Stand()
-                        print('You stay it\'s the dealers turn')
-                        Dealer()
+                            else:
+                                player.Stand()
+                                print('You stay it\'s the dealers turn')
+                                Dealer()
     
     print('Thank you for playing!')
 
@@ -212,9 +262,11 @@ def potManage(pot, Bust, BlackJack):
     else:
         player.take_pot(pot)
         pot = 0
+    return pot
 
+def Main():
 
-Game()
+Main()
 
     
         
