@@ -71,8 +71,7 @@ class Player:
     def bet(self, bet):
         if bet > self.money:
             print("You do not have enough to bet that much")
-            self.overBet = True
-            return self.overBet
+            return False
         elif bet == self.money:
             self.money = 0
             print("All in")
@@ -85,6 +84,12 @@ class Player:
             self.money = 0
         else:
             self.money -= bet * 2
+
+    def prompt(self):
+        ask = input('Will you play again? ')
+        if ask == 'Y':
+            return True
+
 
 class Card:
     def __init__(self, suit, value, usedAce = False):
@@ -145,8 +150,8 @@ SUITS = ['D','C','S','H']
 VALUES = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
 
 deck = Deck()
-for s in suits:  #creates the cards for the deck
-    for v in values:
+for s in SUITS:  #creates the cards for the deck
+    for v in VALUES:
         card = Card(s,v,False)
         deck.add_card(card)
 
@@ -164,10 +169,11 @@ class Game:
         self.deck = Deck()
 
     def play(self):
-        player.start_hand
+        self.deck.shuffle()
+        player.start_hand()
         if self.has_blackjack():
             print("BlackJack!")
-            Money.blackjack()
+            money.BlackJack()
             return
 
         while player.get_hand_value() <= 21 and player.prompt_hit():
@@ -195,12 +201,15 @@ class Game:
         if player.get_hand_value() > dealer.get_hand_value():
             print('You Win!')
             Money.win()
+            player.resetTotal()
         elif player.get_hand_value() == dealer.get_hand_value():
             print('Tie game')
             Money.tie()
+            player.resetTotal()
         else:
             print('You Lose.')
-            Money.lost
+            Money.bust()
+            player.resetTotal()
         
         
         
@@ -268,39 +277,59 @@ class Hand:
         return max(handValues)
     
 
+class Money:
+    def __init__(self, money):
+        self.money = money
+        self.pot = 0
 
-def Betting(pot):
-    try:
-        bet = int(input('How much will you bet? '))
-        player.bet(bet)
-        if player.overBet():
-            Betting(pot)
-        else:
-            pot += bet
-            print('{} is the pot'.format(pot))
-            return pot        
-    except ValueError:
-        print('Please use a number')
-        Betting(pot)
+    def Bet(self):
+        try:
+            bet = int(input('How much will you bet? '))
+            if player.bet(bet):
+                self.pot += bet
+                print('{} is the pot'.format(self.pot))
+                return self.pot        
+            else:
+                self.Bet()
+        except ValueError:
+            print('Please use a number')
+            self.Bet()
 
-def potManage(pot, Bust, BlackJack):
-    if BlackJack == True:
-        pot *= 1.5
-        player.take_pot(pot)
-        pot = 0
-    elif Bust == True:
-        player.lose(pot)
-        pot = 0
-    else:
-        player.take_pot(pot)
-        pot = 0
-    return pot
+    def BlackJack(self):
+        self.pot *= 1.5
+        player.take_pot(self.pot)
+        self.pot = 0
+
+    def bust(self):
+        player.lose(self.pot)
+        self.pot = 0
+
+
+    def win(self):
+        player.take_pot(self.pot)
+        self.pot = 0
+    
+    def tie(self):
+        self.pot = 0
+        
 
 def Main():
-    ...
-    Money()
-    while player.prompt() and money > 0:
-        ...
+    name = input('What is your name? ')
+    money = int(input('How much money will you be playing with? Default $100. '))
+    player = Player(name, money)
+    manage = Money(money)
+    dealer = Player('Dealer', 0, True)
+    while player.prompt() and player.get_money() > 0:
+        manage.Bet()
+        game = Game(player)
+        game.play()
+    
+    print('Thank you for playing!')
+    
+
+    
+
+    
 
 Main()
 
