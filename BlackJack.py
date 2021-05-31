@@ -32,35 +32,35 @@ class Player:
     def start_hand(self, deck):
         for i in range(2):
             card = deck.draw()
-            print('Card {}: {} of {}'.format(i+1, card.get_value(), card.get_suit()))
+            print('Card {}: {} of {}'.format(i+1, card.get_values(), card.get_suit()))
             self.hand.append(card)
             
         for i in self.hand:
-            if (i.get_value() == 'J') or (i.get_value() == 'Q') or (i.get_value() == 'K'):
+            if (i.get_values() == 'J') or (i.get_values() == 'Q') or (i.get_values() == 'K'):
                 self.total += 10
-            elif (i.get_value() == 'A') and self.total >= 10:
+            elif (i.get_values() == 'A') and self.total >= 10:
                 self.total += 11
-            elif (i.get_value() == 'A'):
+            elif (i.get_values() == 'A'):
                 self.total += 1
             else:
-                self.total += int(i.get_value())
+                self.total += int(i.get_values())
         return self.total
 
     def hit(self, deck):
         card = deck.draw()
-        print('Card {}: {} of {}'.format(int(len(self.hand) + 1),card.get_value(), card.get_suit()))
+        print('Card {}: {} of {}'.format(int(len(self.hand) + 1),card.get_values(), card.get_suit()))
         self.hand.append(card)
-        if (card.get_value() == 'J') or (card.get_value() == 'Q') or (card.get_value() == 'K'):
+        if (card.get_values() == 'J') or (card.get_values() == 'Q') or (card.get_values() == 'K'):
             self.total += 10
-        elif (card.get_value() == 'A') and self.total >= 10:
+        elif (card.get_values() == 'A') and self.total >= 10:
             self.total += 11
-        elif (card.get_value() == 'A'):
+        elif (card.get_values() == 'A'):
             self.total += 1
         else:
-            self.total += int(card.get_value())
+            self.total += int(card.get_values())
         
         for x in self.hand: #changes Ace value in hand if over 21
-            if x.get_value() == "A" and self.total > 21 and x.usedAce == False:
+            if x.get_values() == "A" and self.total > 21 and x.usedAce == False:
                 self.total -= 10
                 x.use_ace()
         return self.total
@@ -155,61 +155,77 @@ for s in SUITS:  #creates the cards for the deck
         card = Card(s,v,False)
         deck.add_card(card)
 
+'''
 for s,v in product(SUITS,VALUES):
     ...
-
+'''
+'''
 name = input('What is your name? ')
 money = int(input('How much money will you be playing with? Default $100. '))
 player = Player(name, money)
 dealer = Player('Dealer', 0, True)
+'''
+def Main():
+    name = input('What is your name? ')
+    money = int(input('How much money will you be playing with? Default $100. '))
+    player = Player(name, money)
+    manage = Money(money,player)
+    dealer = Player('Dealer', 0, True)
+    game = Game(player,manage)
+    while player.prompt() and player.get_money() > 0:
+        manage.Bet()
+        game.play()
+    
+    print('Thank you for playing!')
 
 class Game:
-    def __init__(self,player):
+    def __init__(self,player,money):
         self.player = player
         self.deck = Deck()
+        self.money = money
 
     def play(self):
         self.deck.shuffle()
-        player.start_hand()
+        self.player.start_hand(self.deck)
         if self.has_blackjack():
             print("BlackJack!")
-            money.BlackJack()
+            self.money.BlackJack()
             return
 
-        while player.get_hand_value() <= 21 and player.prompt_hit():
-            player.hit
+        while self.player.get_hand_value() <= 21 and player.prompt_hit():
+            self.player.hit
             
-        if player.get_hand_value() > 21:
+        if self.player.get_hand_value() > 21:
             self.has_busted()
             return
 
-        if not player.prompt_hit():
-            player.stand()
+        if not self.player.prompt_hit():
+            self.player.stand()
             print('You stay it\'s the dealers turn')
             Dealer()
 
         self.compare()
 
     def has_blackjack(self):
-        return player.get_hand_value() == 21
+        return self.player.get_hand_value() == 21
 
     def has_busted(self):
         print('Bust')
         Money.bust()
 
     def compare(self):
-        if player.get_hand_value() > dealer.get_hand_value():
+        if self.player.get_hand_value() > dealer.get_hand_value():
             print('You Win!')
             Money.win()
-            player.resetTotal()
-        elif player.get_hand_value() == dealer.get_hand_value():
+            self.player.resetTotal()
+        elif self.player.get_hand_value() == dealer.get_hand_value():
             print('Tie game')
-            Money.tie()
-            player.resetTotal()
+            self.money.tie()
+            self.player.resetTotal()
         else:
             print('You Lose.')
-            Money.bust()
-            player.resetTotal()
+            self.money.bust()
+            self.player.resetTotal()
         
         
         
@@ -217,7 +233,7 @@ class Game:
         
         
         
-        
+        '''
         turn = 0
         pot = 0
         play = True #is the check variable for ending the game
@@ -255,7 +271,7 @@ class Game:
                                 Dealer()
     
     print('Thank you for playing!')
-
+'''
             
 class Hand:
     def __init__(self):
@@ -278,14 +294,15 @@ class Hand:
     
 
 class Money:
-    def __init__(self, money):
+    def __init__(self, money, player):
         self.money = money
         self.pot = 0
+        self.player = player
 
     def Bet(self):
         try:
             bet = int(input('How much will you bet? '))
-            if player.bet(bet):
+            if self.player.overBet == False:
                 self.pot += bet
                 print('{} is the pot'.format(self.pot))
                 return self.pot        
@@ -297,22 +314,22 @@ class Money:
 
     def BlackJack(self):
         self.pot *= 1.5
-        player.take_pot(self.pot)
+        self.player.take_pot(self.pot)
         self.pot = 0
 
     def bust(self):
-        player.lose(self.pot)
+        self.player.lose(self.pot)
         self.pot = 0
 
 
     def win(self):
-        player.take_pot(self.pot)
+        self.player.take_pot(self.pot)
         self.pot = 0
     
     def tie(self):
         self.pot = 0
         
-
+'''
 def Main():
     name = input('What is your name? ')
     money = int(input('How much money will you be playing with? Default $100. '))
@@ -325,7 +342,7 @@ def Main():
         game.play()
     
     print('Thank you for playing!')
-    
+   ''' 
 
     
 
