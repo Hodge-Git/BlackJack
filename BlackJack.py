@@ -152,21 +152,7 @@ class Deck:
 
 SUITS = ['D','C','S','H']
 VALUES = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
-'''
-deck = Deck()
-for s in SUITS:  #creates the cards for the deck
-    for v in VALUES:
-        card = Card(s,v,False)
-        deck.add_card(card)
 
-for s,v in product(SUITS,VALUES):
-    ...
-
-name = input('What is your name? ')
-money = int(input('How much money will you be playing with? Default $100. '))
-player = Player(name, money)
-dealer = Player('Dealer', 0, True)
-'''
 def Main():
     name = input('What is your name? ')
     money = int(input('How much money will you be playing with? Default $100. '))
@@ -174,7 +160,10 @@ def Main():
     manage = Money(money,player)
     dealer = Player('Dealer', 0, True)
     game = Game(player,manage)
+    manage.Bet()
+    game.play()
     while player.prompt() and player.get_money() > 0:
+        game = Game(player,manage)
         manage.Bet()
         game.play()
     
@@ -185,12 +174,13 @@ class Game:
         self.player = player
         self.deck = Deck()
         self.money = money
-        self.hand = Hand(self.deck)
-        self.dealer = Hand(self.deck)
+        self.hand = Hand()
+        self.dealer = Hand()
 
     def play(self):
         self.deck.shuffle()
-        self.hand.start_hand()
+        for i in range(2):
+            self.hand.addCard(self.deck.draw())
         if self.has_blackjack():
             print("BlackJack!")
             self.money.BlackJack()
@@ -235,66 +225,11 @@ class Game:
             self.player.resetTotal()
             self.hand.reset_hand()
             self.dealer.reset_hand()
-        
-        
-        
-        
-        
-        
-        
-        '''
-        turn = 0
-        pot = 0
-        play = True #is the check variable for ending the game
-        while play == True and player.get_money() >= 0:
-            turn += 1
-            deck.shuffle()
-            BlackJack = False
-            Bust = False
-            Betting(pot)
-            player.start_hand(deck)
-            if player.get_total() == 21: #this is for a BlackJack
-                print('BlackJack!')
-                BlackJack = True
-                potManage(pot, Bust, BlackJack)
-                deck.recall(player.hand,dealer.hand)
-            else:
-                while player.stand == False or Bust == False:
-                    hit = input('do you want to hit? ')
-                    if hit == 'Y':
-                        player.hit(deck)
-                        if player.get_total() > 21: #This is for busting
-                            print('Bust')
-                            Bust = True
-                            Deck.recall(player.hand,dealer.hand)
-                            potManage(pot, Bust, BlackJack)
-                            player.resetTotal()
-                            turn = 0
-                            playCheck = input('Do you want to play again? ')
-                            if playCheck == "N":
-                                play = False
-                                break
-                            else:
-                                player.Stand()
-                                print('You stay it\'s the dealers turn')
-                                Dealer()
-    
-    print('Thank you for playing!')
-'''
             
 class Hand:
-    def __init__(self,deck):
+    def __init__(self):
         self.cards = []
         self.total = 0
-        self.deck = deck
-
-    def start_hand(self):
-        for i in range(2):
-            card = self.deck.draw()
-            self.cards.append(card)
-            print('Card {}: {} of {}'.format(i+1, card.get_value(), card.get_suit()))
-            self.total += 1
-
 
     def addCard(self, card):
         self.cards.append(card)
@@ -310,12 +245,20 @@ class Hand:
         
         cardsValues = [card.get_values() for card in self.cards]
         possibilities = product(*cardsValues)
-        handValues = []
+        valedValues = []
+        badValues = []
+        
         for possibility in possibilities:
             handScore = sum(possibility)
             if handScore <= 21:
-                handValues.append(handScore)
-        return max(handValues)
+                valedValues.append(handScore)
+            else:
+                badValues.append(handScore)
+        
+        if valedValues: 
+            return max(valedValues)
+        else:
+            return min(badValues)
     
 
 class Money:
@@ -353,21 +296,6 @@ class Money:
     
     def tie(self):
         self.pot = 0
-        
-'''
-def Main():
-    name = input('What is your name? ')
-    money = int(input('How much money will you be playing with? Default $100. '))
-    player = Player(name, money)
-    manage = Money(money)
-    dealer = Player('Dealer', 0, True)
-    while player.prompt() and player.get_money() > 0:
-        manage.Bet()
-        game = Game(player)
-        game.play()
-    
-    print('Thank you for playing!')
-   ''' 
 
     
 
