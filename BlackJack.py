@@ -7,7 +7,6 @@ class Player:
         self.name = name
         self.money = money
         self.hand = []
-        self.stand = False
         self.dealer = dealer
         self.overBet = False
         self.total = 0
@@ -65,9 +64,6 @@ class Player:
                 x.use_ace()
         return self.total
 
-    def Stand(self):
-        self.stand = True
-
     def bet(self, bet):
         if bet > self.money:
             print("You do not have enough to bet that much")
@@ -90,6 +86,11 @@ class Player:
         if ask == 'Y':
             return True
 
+    def prompt_hit(self):
+        ask = input('Do you want to hit? ')
+        if ask == 'Y':
+            return True
+
 
 class Card:
     def __init__(self, suit, value, usedAce = False):
@@ -106,6 +107,9 @@ class Card:
         if self.value == 'A':
             return [1,11]
         return [int(self.value)]
+
+    def get_value(self):
+        return self.value
 
 
     def get_suit(self):
@@ -148,18 +152,16 @@ class Deck:
 
 SUITS = ['D','C','S','H']
 VALUES = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
-
+'''
 deck = Deck()
 for s in SUITS:  #creates the cards for the deck
     for v in VALUES:
         card = Card(s,v,False)
         deck.add_card(card)
 
-'''
 for s,v in product(SUITS,VALUES):
     ...
-'''
-'''
+
 name = input('What is your name? ')
 money = int(input('How much money will you be playing with? Default $100. '))
 player = Player(name, money)
@@ -183,49 +185,56 @@ class Game:
         self.player = player
         self.deck = Deck()
         self.money = money
+        self.hand = Hand(self.deck)
+        self.dealer = Hand(self.deck)
 
     def play(self):
         self.deck.shuffle()
-        self.player.start_hand(self.deck)
+        self.hand.start_hand()
         if self.has_blackjack():
             print("BlackJack!")
             self.money.BlackJack()
             return
 
-        while self.player.get_hand_value() <= 21 and player.prompt_hit():
-            self.player.hit
+        while self.hand.score() <= 21 and self.player.prompt_hit():
+            self.hand.addCard(self.deck.draw())
             
-        if self.player.get_hand_value() > 21:
+        if self.hand.score() > 21:
             self.has_busted()
             return
 
         if not self.player.prompt_hit():
-            self.player.stand()
             print('You stay it\'s the dealers turn')
             Dealer()
 
         self.compare()
 
     def has_blackjack(self):
-        return self.player.get_hand_value() == 21
+        return self.hand.score() == 21
 
     def has_busted(self):
         print('Bust')
-        Money.bust()
+        self.money.bust()
 
     def compare(self):
-        if self.player.get_hand_value() > dealer.get_hand_value():
+        if self.hand.score() > self.dealer.score():
             print('You Win!')
-            Money.win()
+            self.money.win()
             self.player.resetTotal()
-        elif self.player.get_hand_value() == dealer.get_hand_value():
+            self.hand.reset_hand()
+            self.dealer.reset_hand()
+        elif self.hand.score() == self.dealer.score():
             print('Tie game')
             self.money.tie()
             self.player.resetTotal()
+            self.hand.reset_hand()
+            self.dealer.reset_hand()
         else:
             print('You Lose.')
             self.money.bust()
             self.player.resetTotal()
+            self.hand.reset_hand()
+            self.dealer.reset_hand()
         
         
         
@@ -274,12 +283,28 @@ class Game:
 '''
             
 class Hand:
-    def __init__(self):
+    def __init__(self,deck):
         self.cards = []
-        
+        self.total = 0
+        self.deck = deck
+
+    def start_hand(self):
+        for i in range(2):
+            card = self.deck.draw()
+            self.cards.append(card)
+            print('Card {}: {} of {}'.format(i+1, card.get_value(), card.get_suit()))
+            self.total += 1
+
 
     def addCard(self, card):
         self.cards.append(card)
+        self.total += 1
+        print('Card {}: {} of {}'.format(self.total, card.get_value(), card.get_suit()))
+
+    def reset_hand(self):
+        self.cards = []
+        self.total = 0
+
     
     def score(self): #Calculates largest evaluation of the hand that is less than 21
         
