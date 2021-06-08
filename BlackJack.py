@@ -48,13 +48,9 @@ class Player:
 
 
 class Card:
-    def __init__(self, suit, value, usedAce = False):
+    def __init__(self, suit, value):
         self.suit = suit
         self.value = value
-        self.usedAce = usedAce
-
-    def use_ace(self):
-        self.usedAce = True
 
     def get_values(self):
         if self.value in ['J','K','Q']:
@@ -92,13 +88,6 @@ class Deck:
 
     def draw(self):
         return self.deck.pop()
-
-    def recall(self, player_hand, dealer_hand = ()): #possibly get rid of
-        for i in player_hand:
-            self.deck.append(player_hand.pop())
-
-        for i in dealer_hand:
-            self.deck.append(dealer_hand.pop())
 
     def get_card(self, suit, value):
         for c in self.deck:
