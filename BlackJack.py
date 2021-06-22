@@ -146,6 +146,14 @@ class Game:
             self.money.bust()
             self.hand.reset_hand()
             self.dealer.reset_hand()
+
+class Simulation:
+    def __init__(self):
+        self.games_lost = 0
+        self.games_won = 0
+        self.player_bust = 0
+        self.dealer_bust = 0
+
             
 class Hand:
     def __init__(self):
