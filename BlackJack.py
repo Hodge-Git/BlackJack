@@ -1,15 +1,38 @@
 from itertools import product
 import random
 from typing import ForwardRef
+from enum import Enum
 
 SUITS = ['D','C','S','H']
 VALUES = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
+class VictoryStatus:
+    WIN = 1
+    TIE = 3
+    LOSE = 2
+
+def humanAI(player):
+    print(player.hand)
+    choice = input('Would you like to hit? ').lower()
+    return choice == 'yes'
+
+def simpleAI(player):
+    return player.hand.score() < 17
+
 
 class Player:
-    def __init__(self, name, money, dealer = False):
+    def __init__(self, name, money, AImethod):
         self.name = name
         self.money = money
-        self.dealer = dealer
+        self.hand = Hand()
+        self.decide_hit = AImethod.__get__(self)
+
+
+    def has_busted(self):
+        return self.hand.score() > 21
+
+    def has_blackjack(self):
+        return self.hand.score() == 21
+
 
     def get_money(self):
         return self.money
@@ -46,6 +69,9 @@ class Player:
         if ask == 'Y':
             return True
 
+class Dealer(Player):
+    ...
+       
 
 class Card:
     def __init__(self, suit, value):
@@ -95,64 +121,119 @@ class Deck:
                 return c
 
 class Game:
-    def __init__(self,player,money):
+    def __init__(self,player,dealer,money):
         self.player = player
         self.deck = Deck()
         self.money = money
-        self.hand = Hand()
-        self.dealer = Hand()
+        self.dealer = dealer
+        self.ended = False
 
     def play(self):
         self.deck.shuffle()
-        for i in range(2):
-            self.hand.addCard(self.deck.draw())
-        
-        if self.has_blackjack():
-            print("BlackJack!")
-            self.money.BlackJack()
-            return
-
-        while self.hand.score() <= 21 and self.player.prompt_hit():
-            self.hand.addCard(self.deck.draw())
-            
-        if self.hand.score() > 21:
-            self.has_busted()
-            return
-            
+        self.player.hand.reset_hand()
+        self.dealer.hand.reset_hand()
+        self.playturn(self.player)
         print('You stay it\'s the dealers turn')
-        Dealer()
-        self.compare()
+        if not self.ended:
+            self.playturn(self.dealer)
 
-    def has_blackjack(self):
-        return self.hand.score() == 21
+    
 
-    def has_busted(self):
-        print('Bust')
-        self.money.bust()
+    def playturn(self,player):   
+        for i in range(2):
+            player.hand.addCard(self.deck.draw())
+        while True:
+            if player.has_blackjack():
+                print("BlackJack!")
+                self.ended = True
+                return
+
+            if player.has_busted():
+                self.ended = True
+                return
+
+            if not player.decide_hit():
+                break
+            player.hand.addCard(self.deck.draw())          
+        
+        
+
+    
+    def update_money(self):
+        status = self.compare()
+        if status == VictoryStatus.WIN:
+            self.money.win()
+        elif status == VictoryStatus.LOSE:
+            self.money.bust()
+        elif status == VictoryStatus.TIE:
+            self.money.tie()
 
     def compare(self):
-        if self.hand.score() > self.dealer.score():
+        if self.player.has_blackjack():
+            return VictoryStatus.WIN
+        if self.dealer.has_blackjack():
+            return VictoryStatus.LOSE
+        if self.player.has_busted():
+            return VictoryStatus.LOSE
+        if self.dealer.has_busted():
+            return VictoryStatus.WIN
+
+        if self.player.hand.score() > self.dealer.score():
             print('You Win!')
-            self.money.win()
-            self.hand.reset_hand()
-            self.dealer.reset_hand()
-        elif self.hand.score() == self.dealer.score():
+            return VictoryStatus.WIN
+        elif self.player.hand.score() == self.dealer.hand.score():
             print('Tie game')
-            self.money.tie()
-            self.hand.reset_hand()
-            self.dealer.reset_hand()
-        else:
+            return VictoryStatus.TIE
+        elif self.player.hand.score() < self.dealer.hand.score():
             print('You Lose.')
-            self.money.bust()
-            self.hand.reset_hand()
-            self.dealer.reset_hand()
+            return VictoryStatus.LOSE
+
+class Statistics:
+    def __init__(self):
+        self.wins = 0
+        self.loses = 0
+        self.ties = 0
+        self.busts = 0
+        self.blackjacks = 0
+
+    def __repr__(self):
+        return f"< Wins {self.wins}, Loses {self.loses}, Ties {self.ties}, Busts {self.busts}, BlackJacks {self.blackjacks} >"
 
 class Simulation:
-    def __init__(self):
-        self.games_lost = 0
-        self.games_won = 0
-        self.player_bust = 0
-        self.dealer_bust = 0
+    def __init__(self, player, dealer):
+        self.player = player
+        self.dealer = dealer
+        self.playerstats = Statistics()
+        self.dealerstats = Statistics()
+    
+    def run(self, games):
+        for _ in range(games):
+            game = Game(self.player,self.dealer, 1000)
+            game.play()
+            compare = game.compare()
+
+            if compare == VictoryStatus.WIN:
+                self.playerstats.wins += 1
+                self.dealerstats.loses += 1
+            elif compare == VictoryStatus.LOSE:
+                self.playerstats.loses += 1
+                self.dealerstats.wins += 1
+            elif compare == VictoryStatus.TIE:
+                self.playerstats.ties += 1
+                self.dealerstats.ties += 1
+            
+            if self.player.has_busted():
+                self.playerstats.busts += 1
+            if self.dealer.has_busted():
+                self.dealerstats.busts += 1
+
+            if self.player.has_blackjack():
+                self.playerstats.blackjacks += 1
+            if self.dealer.has_blackjack():
+                self.dealerstats.blackjacks += 1    
+            
+            
+
 
             
 class Hand:
@@ -169,7 +250,9 @@ class Hand:
         self.cards = []
         self.total = 0
 
-    
+    def __repr__(self):
+        return f"< Hand, Score: {self.score()}, Cards: {self.cards} > "
+
     def score(self): #Calculates largest evaluation of the hand that is less than 21
         
         cardsValues = [card.get_values() for card in self.cards]
