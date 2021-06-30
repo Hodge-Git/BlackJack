@@ -311,9 +311,11 @@ def Main():
     except ValueError:
         money = 100
 
+    
+
     player = Player(name, money, )
     manage = Money(money,player)
-    dealer = Player('Dealer', 0, True)
+    dealer = Player('Dealer', 0,)
     game = Game(player,manage)
     manage.Bet()
     game.play()
