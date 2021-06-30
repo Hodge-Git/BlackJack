@@ -33,7 +33,6 @@ class Player:
     def has_blackjack(self):
         return self.hand.score() == 21
 
-
     def get_money(self):
         return self.money
 
@@ -88,7 +87,6 @@ class Card:
     def get_value(self):
         return self.value
 
-
     def get_suit(self):
         return self.suit
 
@@ -137,8 +135,6 @@ class Game:
         if not self.ended:
             self.playturn(self.dealer)
 
-    
-
     def playturn(self,player):   
         for i in range(2):
             player.hand.addCard(self.deck.draw())
@@ -155,10 +151,7 @@ class Game:
             if not player.decide_hit():
                 break
             player.hand.addCard(self.deck.draw())          
-        
-        
-
-    
+         
     def update_money(self):
         status = self.compare()
         if status == VictoryStatus.WIN:
@@ -254,7 +247,6 @@ class Hand:
         return f"< Hand, Score: {self.score()}, Cards: {self.cards} > "
 
     def score(self): #Calculates largest evaluation of the hand that is less than 21
-        
         cardsValues = [card.get_values() for card in self.cards]
         possibilities = product(*cardsValues)
         valedValues = []
@@ -313,23 +305,26 @@ class Money:
 
 def Main():
     name = input('What is your name? ')
+    
     try:
         money = int(input('How much money will you be playing with? Default $100. '))
     except ValueError:
         money = 100
-    player = Player(name, money)
+
+    player = Player(name, money, )
     manage = Money(money,player)
     dealer = Player('Dealer', 0, True)
     game = Game(player,manage)
     manage.Bet()
     game.play()
+    
     while player.prompt() and player.get_money() > 0:
         game = Game(player,manage)
         manage.Bet()
         game.play()
     
-    print('Thank you for playing, {}!'.format(player.name))
-    print('You leave with ${}'.format(player.get_money()))
+    print(f'Thank you for playing, {player.name}!')
+    print(f'You leave with ${player.name}')
     
 
 Main()
