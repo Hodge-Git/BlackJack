@@ -31,7 +31,7 @@ class Player:
         return self.hand.score() > 21
 
     def has_blackjack(self):
-        return self.hand.score() == 21
+        return self.hand.score() == 21 and len(self.hand.cards) == 2
 
     def get_money(self):
         return self.money
@@ -99,7 +99,7 @@ class Deck:
         self.deck = []
         for s in SUITS:  #creates the cards for the deck
             for v in VALUES:
-                card = Card(s,v,False)
+                card = Card(s,v)
                 self.add_card(card)
         self.shuffle()
 
@@ -131,9 +131,10 @@ class Game:
         self.player.hand.reset_hand()
         self.dealer.hand.reset_hand()
         self.playturn(self.player)
-        print('You stay it\'s the dealers turn')
         if not self.ended:
             self.playturn(self.dealer)
+        self.compare()
+        self.update_money()
 
     def playturn(self,player):   
         for i in range(2):
@@ -149,6 +150,7 @@ class Game:
                 return
 
             if not player.decide_hit():
+                print('You stay it\'s the dealers turn')
                 break
             player.hand.addCard(self.deck.draw())          
          
@@ -163,15 +165,19 @@ class Game:
 
     def compare(self):
         if self.player.has_blackjack():
+            print('BlackJack!')
             return VictoryStatus.WIN
         if self.dealer.has_blackjack():
+            print('Dealer BlackJack!')
             return VictoryStatus.LOSE
         if self.player.has_busted():
+            print('Bust')
             return VictoryStatus.LOSE
         if self.dealer.has_busted():
+            print('Dealer has busted you win!')
             return VictoryStatus.WIN
 
-        if self.player.hand.score() > self.dealer.score():
+        if self.player.hand.score() > self.dealer.hand.score():
             print('You Win!')
             return VictoryStatus.WIN
         elif self.player.hand.score() == self.dealer.hand.score():
@@ -224,9 +230,6 @@ class Simulation:
                 self.playerstats.blackjacks += 1
             if self.dealer.has_blackjack():
                 self.dealerstats.blackjacks += 1    
-            
-            
-
 
             
 class Hand:
@@ -306,17 +309,20 @@ class Money:
 def Main():
     name = input('What is your name? ')
     
+    if input('Will you be playing? ') == 'Y':
+        choice = humanAI
+    else:
+        choice = simpleAI
+
     try:
         money = int(input('How much money will you be playing with? Default $100. '))
     except ValueError:
         money = 100
 
-    
-
-    player = Player(name, money, )
+    player = Player(name, money, choice)
     manage = Money(money,player)
-    dealer = Player('Dealer', 0,)
-    game = Game(player,manage)
+    dealer = Player('Dealer', 0, simpleAI)
+    game = Game(player, dealer, manage)
     manage.Bet()
     game.play()
     
@@ -326,7 +332,7 @@ def Main():
         game.play()
     
     print(f'Thank you for playing, {player.name}!')
-    print(f'You leave with ${player.name}')
+    print(f'You leave with ${player.money}')
     
 
 Main()
