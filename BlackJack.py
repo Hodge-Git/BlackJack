@@ -133,7 +133,6 @@ class Game:
         self.playturn(self.player)
         if not self.ended:
             self.playturn(self.dealer)
-        self.compare()
         self.update_money()
 
     def playturn(self,player):   
@@ -307,27 +306,33 @@ class Money:
         self.pot = 0
 
 def Main():
-    name = input('What is your name? ')
-    
-    if input('Will you be playing? ') == 'Y':
-        choice = humanAI
-    else:
-        choice = simpleAI
+    #name = input('What is your name? ')
+    name = 'Sim'
 
-    try:
-        money = int(input('How much money will you be playing with? Default $100. '))
-    except ValueError:
-        money = 100
+    choice = simpleAI  
+
+    money = 1000  
+    #if input('Will you be playing? ') == 'Y':
+        #choice = humanAI
+    #else:
+        #choice = simpleAI
+
+    #try:
+        #money = int(input('How much money will you be playing with? Default $100. '))
+    #except ValueError:
+        #money = 100
 
     player = Player(name, money, choice)
     manage = Money(money,player)
     dealer = Player('Dealer', 0, simpleAI)
-    game = Game(player, dealer, manage)
+    sim = Simulation(player,dealer)
+    #game = Game(player, dealer, manage)
+    sim.run()
     manage.Bet()
-    game.play()
+    #game.play()
     
     while player.prompt() and player.get_money() > 0:
-        game = Game(player,manage)
+        game = Game(player,dealer,manage)
         manage.Bet()
         game.play()
     
