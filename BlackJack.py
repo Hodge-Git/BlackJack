@@ -306,30 +306,30 @@ class Money:
         self.pot = 0
 
 def Main():
-    #name = input('What is your name? ')
+    name = input('What is your name? ')
     name = 'Sim'
 
     choice = simpleAI  
 
     money = 1000  
-    #if input('Will you be playing? ') == 'Y':
-        #choice = humanAI
-    #else:
-        #choice = simpleAI
+    if input('Will you be playing? ') == 'Y':
+        choice = humanAI
+    else:
+        choice = simpleAI
 
-    #try:
-        #money = int(input('How much money will you be playing with? Default $100. '))
-    #except ValueError:
-        #money = 100
+    try:
+        money = int(input('How much money will you be playing with? Default $100. '))
+    except ValueError:
+        money = 100
 
     player = Player(name, money, choice)
     manage = Money(money,player)
     dealer = Player('Dealer', 0, simpleAI)
     sim = Simulation(player,dealer)
-    #game = Game(player, dealer, manage)
-    sim.run()
+    game = Game(player, dealer, manage)
+    #sim.run()
     manage.Bet()
-    #game.play()
+    game.play()
     
     while player.prompt() and player.get_money() > 0:
         game = Game(player,dealer,manage)
