@@ -10,21 +10,45 @@ class VictoryStatus:
     TIE = 3
     LOSE = 2
 
-def humanAI(player):
-    print(player.hand)
-    choice = input('Would you like to hit? ').lower()
-    return choice == 'yes'
+class HumanAI:
+    def hit(self, player):
+        print(player.hand)
+        choice = input('Would you like to hit? ').lower()
+        return choice == 'yes'
 
-def simpleAI(player):
-    return player.hand.score() < 17
+    def bet(self, player):
+        try:
+            bet = int(input('How much will you bet? '))
+            if bet == player.balance:
+                print('All in.')
+            if bet <= player.balance:
+                print('${} is the pot'.format(bet))
+                return bet
+        except ValueError:
+            print('Please use a number')
+            self.bet(player)
+    
+    def double_down(self, player):
+        ...
+
+class SimpleAI:
+    def hit(self, player):
+        return player.hand.score() < 17
+
+    def bet(self, player):
+        return 50
+
+    def double_down(self, player):
+        return False
 
 
 class Player:
-    def __init__(self, name, money, AImethod):
+    def __init__(self, name, balance, AIclass):
         self.name = name
-        self.money = money
+        self._balance = balance
         self.hand = Hand()
-        self.decide_hit = AImethod.__get__(self)
+        self.decide = AIclass()
+        self.bet = 0
 
 
     def has_busted(self):
@@ -33,45 +57,27 @@ class Player:
     def has_blackjack(self):
         return self.hand.score() == 21 and len(self.hand.cards) == 2
 
-    def get_money(self):
-        return self.money
+    @property
+    def balance(self):
+        return self._balance
 
-    def take_pot(self, pot):
-        self.money += pot
-        print('You now have ${}'.format(self.money))
-
-    def lose(self, pot):
-        self.money -= pot
-        print('You now have ${}'.format(self.money))
-
-    def bet(self, bet):
-        if bet == self.money:
-            self.money = 0
-            print("All in")
-        else:
-            self.money -= bet
-            print("you have ${} left".format(self.money))
-
-    def double_down(self, bet): #for when the player wants to double bet and bet it all on the next card to be the winner
-        if bet * 2 >= self.money:
-            self.money = 0
-        else:
-            self.money -= bet * 2
+    @balance.setter
+    def balance(self, value):
+        self._balance = value
+        print('You now have ${}'.format(self.balance))
 
     def prompt(self):
         ask = input('Will you play again? ')
         if ask == 'Y':
             return True
 
-    def prompt_hit(self):
-        ask = input('Do you want to hit? ')
-        if ask == 'Y':
-            return True
-
 class Dealer(Player):
-    ...
+    def __init__(self, name, AIclass):
+        self.name = name
+        self.decide = AIclass()
+        self.hand = Hand()
+            
        
-
 class Card:
     def __init__(self, suit, value):
         self.suit = suit
@@ -90,9 +96,8 @@ class Card:
     def get_suit(self):
         return self.suit
 
-    def __str__(self):
+    def __repr__(self):
         return self.suit + '_' + self.value
-
 
 class Deck:
     def __init__(self):
@@ -119,48 +124,47 @@ class Deck:
                 return c
 
 class Game:
-    def __init__(self,player,dealer,money):
+    def __init__(self,player,dealer):
         self.player = player
         self.deck = Deck()
-        self.money = money
+        self.pot = Pot(self.player)
         self.dealer = dealer
-        self.ended = False
 
     def play(self):
-        self.deck.shuffle()
-        self.player.hand.reset_hand()
-        self.dealer.hand.reset_hand()
+        self.player.hand = Hand()
+        self.dealer.hand = Hand()
+        self.pot.collect_bets()
         self.playturn(self.player)
         if not self.ended:
             self.playturn(self.dealer)
-        self.update_money()
+        status = self.compare()
+        self.pot.settle(status)
 
     def playturn(self,player):   
         for i in range(2):
             player.hand.addCard(self.deck.draw())
+        
+        if player.has_blackjack():
+            print("BlackJack!")
+            return
+
         while True:
-            if player.has_blackjack():
-                print("BlackJack!")
-                self.ended = True
-                return
-
             if player.has_busted():
-                self.ended = True
                 return
 
-            if not player.decide_hit():
+            if not player.decide.hit():
                 print('You stay it\'s the dealers turn')
-                break
-            player.hand.addCard(self.deck.draw())          
-         
-    def update_money(self):
-        status = self.compare()
-        if status == VictoryStatus.WIN:
-            self.money.win()
-        elif status == VictoryStatus.LOSE:
-            self.money.bust()
-        elif status == VictoryStatus.TIE:
-            self.money.tie()
+                return
+            
+            if player != self.dealer and self.pot.prompt_double_down():
+                player.hand.addCard(self.deck.draw())
+                return
+
+            player.hand.addCard(self.deck.draw())
+
+    @property     
+    def ended(self):
+        return self.player.has_busted() or self.player.has_blackjack()
 
     def compare(self):
         if self.player.has_blackjack():
@@ -194,6 +198,8 @@ class Statistics:
         self.busts = 0
         self.blackjacks = 0
 
+    #keep a list of touples
+
     def __repr__(self):
         return f"< Wins {self.wins}, Loses {self.loses}, Ties {self.ties}, Busts {self.busts}, BlackJacks {self.blackjacks} >"
 
@@ -206,7 +212,7 @@ class Simulation:
     
     def run(self, games):
         for _ in range(games):
-            game = Game(self.player,self.dealer, 1000)
+            game = Game(self.player,self.dealer)
             game.play()
             compare = game.compare()
 
@@ -229,7 +235,6 @@ class Simulation:
                 self.playerstats.blackjacks += 1
             if self.dealer.has_blackjack():
                 self.dealerstats.blackjacks += 1    
-
             
 class Hand:
     def __init__(self):
@@ -241,10 +246,6 @@ class Hand:
         self.total += 1
         print('Card {}: {} of {}'.format(self.total, card.get_value(), card.get_suit()))
 
-    def reset_hand(self):
-        self.cards = []
-        self.total = 0
-
     def __repr__(self):
         return f"< Hand, Score: {self.score()}, Cards: {self.cards} > "
 
@@ -254,6 +255,9 @@ class Hand:
         valedValues = []
         badValues = []
         
+        if not self.cards:
+            return 0
+
         for possibility in possibilities:
             handScore = sum(possibility)
             if handScore <= 21:
@@ -267,55 +271,49 @@ class Hand:
             return min(badValues)
     
 
-class Money:
-    def __init__(self, money, player):
-        self.money = money
-        self.pot = 0
+class Pot:
+    def __init__(self, player):
         self.player = player
-
-    def Bet(self):
-        try:
-            bet = int(input('How much will you bet? '))
-            if bet == self.player.get_money():
-                print('All in.')
-            if bet <= self.player.get_money():
-                self.pot += bet
-                print('${} is the pot'.format(self.pot))
-                return self.pot    
-            else:
-                print('You do not have enough to bet that much')
-                self.Bet()
-        except ValueError:
-            print('Please use a number')
-            self.Bet()
-
-    def BlackJack(self):
-        self.pot *= 1.5
-        self.player.take_pot(self.pot)
-        self.pot = 0
-
-    def bust(self):
-        self.player.lose(self.pot)
-        self.pot = 0
-
-    def win(self):
-        self.player.take_pot(self.pot)
-        self.pot = 0
+        self.doubled_down = False
     
-    def tie(self):
-        self.pot = 0
+    def collect_bets(self):
+        bet = None
+        while bet is None or not 0 <= bet <= self.player.balance:
+            bet = self.player.decide.bet()
+
+        if bet == self.player.balance:
+            print("All in")
+        self.player.balance -= bet
+        self.player.bet = bet
+
+    @property
+    def pot_amount(self):
+        return self.player.bet * 2
+
+    def prompt_double_down(self):
+        if self.player.balance < self.player.bet:
+            return False
+        if self.player.decide.double_down():
+            self.player.balance -= self.player.bet
+            self.player.bet *= 2
+            self.doubled_down = True
+        return self.doubled_down
+
+    def settle(self, status):
+        if status == VictoryStatus.WIN:
+            if self.player.has_blackjack():
+                self.player.bet *= 1.5
+            self.player.balance += self.pot_amount
+        elif status == VictoryStatus.TIE:
+            self.player.balance += self.player.bet
 
 def Main():
-    name = input('What is your name? ')
-    name = 'Sim'
+    name = input('What is your name? ') 
 
-    choice = simpleAI  
-
-    money = 1000  
     if input('Will you be playing? ') == 'Y':
-        choice = humanAI
+        choice = HumanAI
     else:
-        choice = simpleAI
+        choice = SimpleAI
 
     try:
         money = int(input('How much money will you be playing with? Default $100. '))
@@ -323,48 +321,25 @@ def Main():
         money = 100
 
     player = Player(name, money, choice)
-    manage = Money(money,player)
-    dealer = Player('Dealer', 0, simpleAI)
-    sim = Simulation(player,dealer)
+    manage = Pot(player)
+    dealer = Dealer('Dealer', SimpleAI)
     game = Game(player, dealer, manage)
-    #sim.run()
     manage.Bet()
     game.play()
     
-    while player.prompt() and player.get_money() > 0:
+    while player.prompt() and player.balance > 0:
         game = Game(player,dealer,manage)
         manage.Bet()
         game.play()
     
     print(f'Thank you for playing, {player.name}!')
     print(f'You leave with ${player.money}')
-    
 
+player = Player('Sim', 10000, SimpleAI)
+dealer = Dealer('Dealer', SimpleAI)   
+sim = Simulation(player,dealer)
+sim.run(10)
+print(sim.playerstats)
+'''
 Main()
-
-    
-        
-            
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+'''
