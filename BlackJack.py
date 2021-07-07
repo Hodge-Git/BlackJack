@@ -123,6 +123,40 @@ class Deck:
             if (c.get_suit == suit) and (c.get_value == value):
                 return c
 
+class Hand:
+    def __init__(self):
+        self.cards = []
+        self.total = 0
+
+    def addCard(self, card):
+        self.cards.append(card)
+        self.total += 1
+        print('Card {}: {} of {}'.format(self.total, card.get_value(), card.get_suit()))
+
+    def __repr__(self):
+        return f"< Hand, Score: {self.score()}, Cards: {self.cards} > "
+
+    def score(self): #Calculates largest evaluation of the hand that is less than 21
+        cardsValues = [card.get_values() for card in self.cards]
+        possibilities = product(*cardsValues)
+        valedValues = []
+        badValues = []
+        
+        if not self.cards:
+            return 0
+
+        for possibility in possibilities:
+            handScore = sum(possibility)
+            if handScore <= 21:
+                valedValues.append(handScore)
+            else:
+                badValues.append(handScore)
+        
+        if valedValues: 
+            return max(valedValues)
+        else:
+            return min(badValues)
+
 class Game:
     def __init__(self,player,dealer):
         self.player = player
@@ -152,7 +186,7 @@ class Game:
             if player.has_busted():
                 return
 
-            if not player.decide.hit():
+            if not player.decide.hit(self.player):
                 print('You stay it\'s the dealers turn')
                 return
             
@@ -236,41 +270,6 @@ class Simulation:
             if self.dealer.has_blackjack():
                 self.dealerstats.blackjacks += 1    
             
-class Hand:
-    def __init__(self):
-        self.cards = []
-        self.total = 0
-
-    def addCard(self, card):
-        self.cards.append(card)
-        self.total += 1
-        print('Card {}: {} of {}'.format(self.total, card.get_value(), card.get_suit()))
-
-    def __repr__(self):
-        return f"< Hand, Score: {self.score()}, Cards: {self.cards} > "
-
-    def score(self): #Calculates largest evaluation of the hand that is less than 21
-        cardsValues = [card.get_values() for card in self.cards]
-        possibilities = product(*cardsValues)
-        valedValues = []
-        badValues = []
-        
-        if not self.cards:
-            return 0
-
-        for possibility in possibilities:
-            handScore = sum(possibility)
-            if handScore <= 21:
-                valedValues.append(handScore)
-            else:
-                badValues.append(handScore)
-        
-        if valedValues: 
-            return max(valedValues)
-        else:
-            return min(badValues)
-    
-
 class Pot:
     def __init__(self, player):
         self.player = player
@@ -279,7 +278,7 @@ class Pot:
     def collect_bets(self):
         bet = None
         while bet is None or not 0 <= bet <= self.player.balance:
-            bet = self.player.decide.bet()
+            bet = self.player.decide.bet(self.player)
 
         if bet == self.player.balance:
             print("All in")
@@ -293,7 +292,7 @@ class Pot:
     def prompt_double_down(self):
         if self.player.balance < self.player.bet:
             return False
-        if self.player.decide.double_down():
+        if self.player.decide.double_down(self.player):
             self.player.balance -= self.player.bet
             self.player.bet *= 2
             self.doubled_down = True
