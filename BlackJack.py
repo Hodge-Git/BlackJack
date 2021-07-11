@@ -2,6 +2,7 @@ from itertools import product
 import random
 from typing import ForwardRef
 from enum import Enum
+from pprint import pformat
 
 SUITS = ['D','C','S','H']
 VALUES = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
@@ -9,6 +10,21 @@ class VictoryStatus:
     WIN = 1
     TIE = 3
     LOSE = 2
+
+def flip_victory_status(status):
+    if status == VictoryStatus.WIN:
+        return VictoryStatus.LOSE
+    if status == VictoryStatus.LOSE:
+        return VictoryStatus.WIN
+    return status
+
+def victory_to_str(status):
+    if status == VictoryStatus.WIN:
+        return "Win"
+    if status == VictoryStatus.LOSE:
+        return "Lose"
+    if status == VictoryStatus.TIE:    
+        return "Tie"
 
 class HumanAI:
     def hit(self, player):
@@ -50,10 +66,11 @@ class Player:
         self.decide = AIclass()
         self.bet = 0
 
-
+    @property
     def has_busted(self):
         return self.hand.score() > 21
 
+    @property
     def has_blackjack(self):
         return self.hand.score() == 21 and len(self.hand.cards) == 2
 
@@ -171,19 +188,19 @@ class Game:
         self.playturn(self.player)
         if not self.ended:
             self.playturn(self.dealer)
-        status = self.compare()
+        status = self.outcome
         self.pot.settle(status)
 
     def playturn(self,player):   
         for i in range(2):
             player.hand.addCard(self.deck.draw())
         
-        if player.has_blackjack():
+        if player.has_blackjack:
             print("BlackJack!")
             return
 
         while True:
-            if player.has_busted():
+            if player.has_busted:
                 return
 
             if not player.decide.hit(self.player):
@@ -198,19 +215,20 @@ class Game:
 
     @property     
     def ended(self):
-        return self.player.has_busted() or self.player.has_blackjack()
+        return self.player.has_busted or self.player.has_blackjack
 
-    def compare(self):
-        if self.player.has_blackjack():
+    @property
+    def outcome(self):
+        if self.player.has_blackjack:
             print('BlackJack!')
             return VictoryStatus.WIN
-        if self.dealer.has_blackjack():
+        if self.dealer.has_blackjack:
             print('Dealer BlackJack!')
             return VictoryStatus.LOSE
-        if self.player.has_busted():
+        if self.player.has_busted:
             print('Bust')
             return VictoryStatus.LOSE
-        if self.dealer.has_busted():
+        if self.dealer.has_busted:
             print('Dealer has busted you win!')
             return VictoryStatus.WIN
 
@@ -226,16 +244,50 @@ class Game:
 
 class Statistics:
     def __init__(self):
-        self.wins = 0
-        self.loses = 0
-        self.ties = 0
-        self.busts = 0
-        self.blackjacks = 0
-
-    #keep a list of touples
+        self.matches = []
 
     def __repr__(self):
-        return f"< Wins {self.wins}, Loses {self.loses}, Ties {self.ties}, Busts {self.busts}, BlackJacks {self.blackjacks} >"
+        match_history = pformat(self.matches, width = 120)
+        return f"< Match History {match_history} \n Wins {self.win_count}, Loses {self.lose_count}\n Double Downs {self.doubled_down_count}, Double Down Profit {self.profit_from_double_down}>"
+
+    @property
+    def win_count(self):
+        return sum([1 for match in self.matches if match.outcome == VictoryStatus.WIN])
+
+    @property
+    def lose_count(self):
+        return sum(match.outcome == VictoryStatus.LOSE for match in self.matches)
+
+    @property
+    def doubled_down_count(self):
+        return sum(match.doubled_down for match in self.matches)
+
+    @property
+    def profit_from_double_down(self):
+        profit = 0
+        for matches in self.matches:
+            if matches.doubled_down:
+                if matches.outcome == VictoryStatus.WIN:
+                    profit += matches.bet
+                if matches.outcome == VictoryStatus.LOSE:
+                    profit -= matches.bet
+        return profit
+    
+    @property
+    def avg_profit_from_double_down(self):
+        return self.profit_from_double_down / self.doubled_down_count    
+
+class MatchStats:
+    def __init__(self, bet, outcome, blackjack, bust, doubled_down):
+        self.bet = bet
+        self.outcome = outcome
+        self.blackjack = blackjack
+        self.busted = bust
+        self.doubled_down = doubled_down
+        
+    def __repr__(self):
+        outcome = victory_to_str(self.outcome)
+        return f"< Outcome {outcome}, Bet {self.bet}, Busted {self.busted}, BlackJacked {self.blackjack}, Doubled down {self.doubled_down} >"
 
 class Simulation:
     def __init__(self, player, dealer):
@@ -243,32 +295,17 @@ class Simulation:
         self.dealer = dealer
         self.playerstats = Statistics()
         self.dealerstats = Statistics()
+        
+    
     
     def run(self, games):
         for _ in range(games):
             game = Game(self.player,self.dealer)
             game.play()
-            compare = game.compare()
-
-            if compare == VictoryStatus.WIN:
-                self.playerstats.wins += 1
-                self.dealerstats.loses += 1
-            elif compare == VictoryStatus.LOSE:
-                self.playerstats.loses += 1
-                self.dealerstats.wins += 1
-            elif compare == VictoryStatus.TIE:
-                self.playerstats.ties += 1
-                self.dealerstats.ties += 1
-            
-            if self.player.has_busted():
-                self.playerstats.busts += 1
-            if self.dealer.has_busted():
-                self.dealerstats.busts += 1
-
-            if self.player.has_blackjack():
-                self.playerstats.blackjacks += 1
-            if self.dealer.has_blackjack():
-                self.dealerstats.blackjacks += 1    
+            playerMatch = MatchStats(self.player.bet, game.outcome, self.player.has_blackjack, self.player.has_busted, game.pot.doubled_down)
+            dealerMatch = MatchStats(self.player.bet, flip_victory_status(game.outcome), self.dealer.has_blackjack, self.dealer.has_busted, game.pot.doubled_down) 
+            self.playerstats.matches.append(playerMatch)  
+            self.dealerstats.matches.append(dealerMatch)
             
 class Pot:
     def __init__(self, player):
@@ -300,8 +337,9 @@ class Pot:
 
     def settle(self, status):
         if status == VictoryStatus.WIN:
-            if self.player.has_blackjack():
+            if self.player.has_blackjack:
                 self.player.bet *= 1.5
+                self.player.bet = int(self.player.bet)
             self.player.balance += self.pot_amount
         elif status == VictoryStatus.TIE:
             self.player.balance += self.player.bet
