@@ -248,7 +248,7 @@ class Statistics:
 
     def __repr__(self):
         match_history = pformat(self.matches, width = 120)
-        return f"< Match History {match_history} \n Wins {self.win_count}, Loses {self.lose_count}\n Double Downs {self.doubled_down_count}, Double Down Profit {self.profit_from_double_down}>"
+        return f"< Match History {match_history} \n Wins {self.win_count}, Loses {self.lose_count}\n Double Downs {self.doubled_down_count}, Double Down Profit {self.profit_from_double_down} >"
 
     @property
     def win_count(self):
