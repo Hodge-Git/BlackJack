@@ -1,4 +1,10 @@
-from BlackJack import Hand, VictoryStatus
+from cards import Hand
+
+class VictoryStatus:
+    WIN = 1
+    TIE = 3
+    LOSE = 2
+    
 class Player:
     def __init__(self, name, balance, AIclass):
         self.name = name

@@ -4,13 +4,7 @@ from typing import ForwardRef
 from enum import Enum
 from pprint import pformat
 from cards import Deck, Hand
-from players import Player, Dealer, Pot
-
-
-class VictoryStatus:
-    WIN = 1
-    TIE = 3
-    LOSE = 2
+from players import Player, Dealer, Pot, VictoryStatus
 
 def flip_victory_status(status):
     if status == VictoryStatus.WIN:
